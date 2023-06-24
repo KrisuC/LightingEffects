@@ -1,32 +1,29 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
+# Compiled object files
 *.o
+*.ko
 *.obj
+*.elf
 
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
+# Compiled dynamic libraries
 *.so
 *.dylib
 *.dll
 
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
+# Compiled executables
 *.exe
-*.out
-*.app
+
+# Build directories
+Build/
+bin/
+
+# IDE specific files and directories (Optional - Add or remove as needed)
+.vscode/
+.idea/
+*.suo
+*.user
+*.sln
+*.vcxproj
+*.xcodeproj
+
+# Dependency directories (Optional - Add or remove as needed)
+vendor/
