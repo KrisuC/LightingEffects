@@ -1,4 +1,7 @@
-#include "D3D12Utility.h"
+#pragma once
+
+#include <stdint.h>
+#include <type_traits>
 
 /** Ref-counted resource interface */
 class IRefCountResource

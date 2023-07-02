@@ -1,13 +1,19 @@
 #pragma once
 
-#include "D3D12Utility.h"
 #include "Actor.h"
+#include "RefCountPtr.h"
 #include <vector>
 
 class Scene
 {
 public:
-	void Render();
+	void RenderScene()
+	{
+		for (RefCountPtr<Actor> pActor : m_pActors)
+		{
+			pActor->RenderComponents();
+		}
+	}
 
-	std::vector<
+	std::vector<RefCountPtr<Actor>> m_pActors;
 };

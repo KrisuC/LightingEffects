@@ -14,6 +14,7 @@ target_link_directories(${PROJECT_NAME} PRIVATE Build/)
 file(GLOB ENGINE_SOURCE
     Source/*.cpp
     Source/*.h
+    Source/*.inl
 )
 add_library(EngineLib ${ENGINE_SOURCE})
 target_link_libraries(${PROJECT_NAME} EngineLib)

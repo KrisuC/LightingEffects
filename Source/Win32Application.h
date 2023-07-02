@@ -6,7 +6,7 @@
 class Win32Application
 {
 public:
-	static int Run(class Engine* pSample, HINSTANCE hInstance, int nCmdShow);
+	static int Run(class Engine* pEngine, HINSTANCE hInstance, int nCmdShow);
 	static HWND GetHwnd() { return m_hWnd; }
 
 protected:

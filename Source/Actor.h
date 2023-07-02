@@ -1,20 +1,20 @@
 #pragma once
 
 #include "Component.h"
-#include "EngineUtility.h"
+#include "RefCountPtr.h"
 #include <vector>
 
-class Actor
+class Actor : public IRefCountResource
 {
 public:
-	void Render()
+	void RenderComponents()
 	{
-		for (RefCountPtr<Component> pComponent : m_components)
+		for (RefCountPtr<Component> pComponent : m_pComponents)
 		{
 			pComponent->Render();
 		}
 	}
 
 private:
-	std::vector< RefCountPtr<Component> > m_components;
+	std::vector< RefCountPtr<Component> > m_pComponents;
 };
