@@ -6,12 +6,18 @@
 #include <d3d12.h>
 #include <d3dcompiler.h>
 #include <type_traits>
+#include <DirectXMath.h>
+#include <dxgi.h>
+#include <dxgi1_6.h>
+#include "d3dx12.h"
 
 #if defined(_DEBUG) || defined(DBG) || defined(DEBUG)
 	#define BUILD_DEBUG 1
 #else
 	#define BUILD_DEBUG 0
 #endif
+
+#define SOURCE_PATH L"C:\\LightingEffects\\Source\\"
 
 using Microsoft::WRL::ComPtr;
 
@@ -132,4 +138,84 @@ void ResetPtrArray(T* comPtrArray)
 	{
 		i.Release();
 	}
+}
+
+inline void GetAssetsPath(_Out_writes_(pathSize) wchar_t* path, uint32_t pathSize)
+{
+	if (path == nullptr)
+	{
+		throw std::exception();
+	}
+
+	uint32_t size = GetModuleFileName(nullptr, path, pathSize);
+	if (size == 0 || size == pathSize)
+	{
+		// size == pathSize means buffer (path) is too small to hold the string
+		throw std::exception();
+	}
+
+	// Scan for the last slash
+	wchar_t* lastSlash = wcsrchr(path, L'\\');
+	if (lastSlash)
+	{
+		wcscpy_s(lastSlash + 1, 20, L"..\\..\\Source\\\0");
+	}
+}
+
+// The memory of *data should be freed by caller
+inline HRESULT ReadDataFromFile(const wchar_t* fileName, byte** data, uint32_t* size)
+{
+	using namespace Microsoft::WRL;
+
+	CREATEFILE2_EXTENDED_PARAMETERS extendedParams{};
+	extendedParams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+	extendedParams.dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
+	extendedParams.dwFileFlags = FILE_FLAG_SEQUENTIAL_SCAN;
+	extendedParams.dwSecurityQosFlags = SECURITY_ANONYMOUS;
+	extendedParams.lpSecurityAttributes = nullptr;
+	extendedParams.hTemplateFile = nullptr;
+
+	Wrappers::FileHandle file(CreateFile2(fileName, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, &extendedParams));
+
+	if (file.Get() == INVALID_HANDLE_VALUE)
+	{
+		throw std::exception();
+	}
+
+	FILE_STANDARD_INFO fileInfo{};
+	if (!GetFileInformationByHandleEx(file.Get(), FileStandardInfo, &fileInfo, sizeof(fileInfo)))
+	{
+		throw std::exception();
+	}
+
+	// File too big, only lower 32bits should be non-zero
+	if (fileInfo.EndOfFile.HighPart != 0)
+	{
+		throw std::exception();
+	}
+
+	*data = reinterpret_cast<byte*>(malloc(fileInfo.EndOfFile.LowPart));
+	*size = fileInfo.EndOfFile.LowPart;
+
+	if (!ReadFile(file.Get(), *data, fileInfo.EndOfFile.LowPart, nullptr, nullptr))
+	{
+		throw std::exception();
+	}
+
+	return S_OK;
+}
+
+#define SHADER_COMPILE_ERROR_HELPER(D3DCompileFromFile_Args)\
+{\
+	ID3DBlob* pShaderErrorBlob = nullptr;\
+	HRESULT hr = D3DCompileFromFile_Args;\
+	if (FAILED(hr))\
+	{\
+		if (pShaderErrorBlob)\
+		{\
+			OutputDebugStringA(reinterpret_cast<const char*>(pShaderErrorBlob->GetBufferPointer()));\
+			pShaderErrorBlob->Release();\
+		}\
+		exit(-1);\
+	}\
 }

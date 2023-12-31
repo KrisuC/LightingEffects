@@ -14,9 +14,15 @@ target_link_directories(${PROJECT_NAME} PRIVATE Build/)
 file(GLOB ENGINE_SOURCE
     Source/*.cpp
     Source/*.h
-    Source/*.inl
+    Source/*.inl    
 )
-add_library(EngineLib ${ENGINE_SOURCE})
+
+file(GLOB SHADER_SOURCE Source/*.hlsl)
+
+# Exclude shader file from VS compilation
+set_source_files_properties(${SHADER_SOURCE} PROPERTIES VS_TOOL_OVERRIDE "None")
+
+add_library(EngineLib ${ENGINE_SOURCE} ${SHADER_SOURCE})
 target_link_libraries(${PROJECT_NAME} EngineLib)
 
 target_include_directories(${PROJECT_NAME} PRIVATE Source/)
