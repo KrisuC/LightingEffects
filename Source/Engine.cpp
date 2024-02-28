@@ -59,8 +59,8 @@ void Engine::OnInit()
 #endif
 
 	// Compiling shaders
-	SHADER_COMPILE_ERROR_HELPER(D3DCompileFromFile(SOURCE_PATH L"Shader.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, &pShaderErrorBlob));
-	SHADER_COMPILE_ERROR_HELPER(D3DCompileFromFile(SOURCE_PATH L"Shader.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+	ShaderCompileHelper(L"Shader.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader);
+	ShaderCompileHelper(L"Shader.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader);
 
 	// Define vertex input layout
 	D3D12_INPUT_ELEMENT_DESC inputElementsDesc[] =
@@ -97,11 +97,14 @@ void Engine::OnInit()
 
 	const uint32_t vertexBufferSize = sizeof(triangleVertices);
 
+	auto heapProperty = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
+
 	// Using a upload heap for simplicity
 	ThrowIfFailed(m_context.GetDevice()->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		&heapProperty,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
+		&resourceDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&m_vertexBuffer)
@@ -179,9 +182,8 @@ void Engine::OnUpdate()
 	m_commandList->RSSetScissorRects(1, &m_context.GetScissorRect());
 
 	// Indicate that backbuffer will be used as render target
-	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET)
-	);
+	auto transitionPresentToRt = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	m_commandList->ResourceBarrier(1, &transitionPresentToRt);
 
 	// Get RTV handle
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
@@ -195,9 +197,8 @@ void Engine::OnUpdate()
 	m_commandList->DrawInstanced(3, 1, 0, 0);
 
 	// Indicate that back buffer will be present
-	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT
-	));
+	auto transitionRtToPresent = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+	m_commandList->ResourceBarrier(1, &transitionRtToPresent);
 
 	ThrowIfFailed(m_commandList->Close());
 

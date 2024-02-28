@@ -1,5 +1,8 @@
 #pragma once
 
+#include <iostream>
+#include <string>
+#include <string_view>
 #include <windows.h>
 #include <stdexcept>
 #include <wrl.h>
@@ -16,8 +19,6 @@
 #else
 	#define BUILD_DEBUG 0
 #endif
-
-#define SOURCE_PATH L"C:\\LightingEffects\\Source\\"
 
 using Microsoft::WRL::ComPtr;
 
@@ -205,17 +206,25 @@ inline HRESULT ReadDataFromFile(const wchar_t* fileName, byte** data, uint32_t* 
 	return S_OK;
 }
 
-#define SHADER_COMPILE_ERROR_HELPER(D3DCompileFromFile_Args)\
-{\
-	ID3DBlob* pShaderErrorBlob = nullptr;\
-	HRESULT hr = D3DCompileFromFile_Args;\
-	if (FAILED(hr))\
-	{\
-		if (pShaderErrorBlob)\
-		{\
-			OutputDebugStringA(reinterpret_cast<const char*>(pShaderErrorBlob->GetBufferPointer()));\
-			pShaderErrorBlob->Release();\
-		}\
-		exit(-1);\
-	}\
+// With error ouput from D3DCompile
+template <typename... Args>
+void ShaderCompileHelper(const wchar_t *fileName, Args... args)
+{
+	ID3DBlob* pShaderErrorBlob = nullptr;
+	const std::wstring soucePath = std::wstring(__WSTR_FILE__);
+	size_t lastSlashIndex = soucePath.find_last_of('\\');
+	const std::wstring folderPath = soucePath.substr(0, lastSlashIndex + 1); // include '\\'
+	const std::wstring fullShaderPath = folderPath + std::wstring(fileName);
+	std::wcout << L"Debug Test File Path" << fullShaderPath << std::endl;
+	HRESULT hr = D3DCompileFromFile(fullShaderPath.c_str(), args..., &pShaderErrorBlob);
+	if (FAILED(hr))
+	{
+		if (pShaderErrorBlob)
+		{
+			OutputDebugStringA(reinterpret_cast<const char*>(pShaderErrorBlob->GetBufferPointer()));
+			pShaderErrorBlob->Release();
+		}
+		std::wcerr << L"Failed to compile shader at path: " << fullShaderPath << std::endl;
+		throw std::exception();
+	}
 }
